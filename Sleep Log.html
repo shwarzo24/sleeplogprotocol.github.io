@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Sleep Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a18;
+    --ink2: #4a4a45;
+    --ink3: #8a8a82;
+    --paper: #f5f2eb;
+    --paper2: #ece8df;
+    --paper3: #e0dcd2;
+    --accent: #c8622a;
+    --accent2: #e8a87c;
+    --good: #3a6b4a;
+    --warn: #b8860b;
+    --rule: rgba(26,26,24,0.12);
+    --r: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0 0 4rem;
+  }
+
+  /* NAV */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--rule);
+    position: sticky; top: 0; background: var(--paper); z-index: 10;
+  }
+  .nav-title { font-family: 'DM Serif Display', serif; font-size: 1.15rem; letter-spacing: -0.02em; }
+  .nav-tabs { display: flex; gap: 2px; background: var(--paper2); border-radius: var(--r); padding: 3px; }
+  .nav-tab {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.04em;
+    padding: 5px 14px; border: none; background: transparent; cursor: pointer;
+    border-radius: 4px; color: var(--ink3); transition: all 0.15s; text-transform: uppercase;
+  }
+  .nav-tab.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  /* VIEWS */
+  .view { display: none; padding: 1.5rem; max-width: 520px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  /* LOG FORM */
+  .day-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+  .day-title { font-family: 'DM Serif Display', serif; font-size: 1.65rem; line-height: 1.2; margin-bottom: 1.75rem; color: var(--ink); }
+  .day-title em { font-style: italic; color: var(--accent); }
+
+  .section-head {
+    font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink2);
+    padding-bottom: 8px; border-bottom: 1px solid var(--rule); margin: 1.5rem 0 0.85rem;
+  }
+  .section-head:first-of-type { margin-top: 0; }
+
+  .field { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--rule); gap: 8px; }
+  .field:last-child { border-bottom: none; }
+  .field-lbl { font-size: 0.82rem; color: var(--ink3); flex-shrink: 0; }
+
+  .stars { display: flex; gap: 5px; }
+  .star {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid var(--paper3); background: var(--paper2);
+    cursor: pointer; font-size: 0.75rem; font-family: 'DM Mono', monospace;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink3); transition: all 0.1s; user-select: none;
+  }
+  .star.lit { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  input[type="time"], input[type="number"], select {
+    font-family: 'DM Mono', monospace; font-size: 0.82rem;
+    background: var(--paper2); border: 1px solid var(--paper3);
+    border-radius: var(--r); padding: 7px 10px; color: var(--ink);
+    outline: none; transition: border-color 0.15s;
+  }
+  input[type="time"]:focus, input[type="number"]:focus, select:focus { border-color: var(--accent); }
+  input[type="number"] { width: 72px; text-align: center; }
+  select { max-width: 170px; }
+  .activity-options { max-width: 170px; }
+  .activity-options label { display: block; font-size: 0.82rem; color: var(--ink2); margin-bottom: 2px; }
+  .activity-options input[type="checkbox"] { margin-right: 6px; }
+  .time-wrap { display: flex; align-items: center; gap: 6px; }
+  input[type="time"] { width: 120px; }
+  input[type="time"]:disabled { opacity: 0.3; }
+
+  .na-btn {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    padding: 7px 10px; border-radius: var(--r);
+    border: 1px solid var(--paper3); background: var(--paper2);
+    cursor: pointer; color: var(--ink3); transition: all 0.15s; letter-spacing: 0.04em;
+  }
+  .na-btn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .yn-row { display: flex; gap: 6px; }
+  .yn-btn {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem; padding: 7px 14px;
+    border-radius: 20px; border: 1px solid var(--paper3); background: var(--paper2);
+    cursor: pointer; color: var(--ink3); transition: all 0.15s;
+  }
+  .yn-btn.yes { background: #e8f5ec; border-color: var(--good); color: var(--good); }
+  .yn-btn.no { background: var(--paper2); border-color: var(--ink); color: var(--ink); }
+
+  .save-btn {
+    width: 100%; margin-top: 1.75rem; padding: 15px;
+    background: var(--ink); color: var(--paper);
+    border: none; border-radius: var(--r); cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
+    transition: opacity 0.15s;
+  }
+  .save-btn:hover { opacity: 0.82; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: var(--paper); padding: 10px 20px;
+    border-radius: 20px; font-size: 0.78rem; letter-spacing: 0.04em;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 100; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* HISTORY VIEW */
+  .history-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .history-bar h2 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; }
+  .export-btn {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 8px 16px; border-radius: var(--r); border: 1px solid var(--ink);
+    background: transparent; cursor: pointer; color: var(--ink); transition: all 0.15s;
+  }
+  .export-btn:hover { background: var(--ink); color: var(--paper); }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink3); font-size: 0.82rem; line-height: 1.8; }
+
+  .entry-card {
+    background: var(--paper2); border-radius: var(--r); padding: 14px 16px;
+    margin-bottom: 8px; border: 1px solid var(--rule);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .entry-date { font-size: 0.72rem; color: var(--ink3); margin-bottom: 4px; }
+  .entry-scores { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    font-size: 0.68rem; padding: 3px 8px; border-radius: 12px;
+    background: var(--paper3); color: var(--ink2);
+  }
+  .pill.hi { background: #e8f5ec; color: var(--good); }
+  .pill.mid { background: #fff8e1; color: var(--warn); }
+  .pill.lo { background: #fdecea; color: #b03030; }
+  .entry-sleep { font-size: 0.75rem; color: var(--ink3); text-align: right; white-space: nowrap; }
+  .entry-sleep strong { font-size: 1rem; color: var(--ink); display: block; }
+  .del-btn {
+    background: none; border: none; cursor: pointer; color: var(--ink3);
+    font-size: 0.9rem; padding: 2px 6px; border-radius: 4px; transition: color 0.1s;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { color: #b03030; }
+
+  /* STATS VIEW */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: var(--paper2); border-radius: var(--r); padding: 14px 16px;
+    border: 1px solid var(--rule);
+  }
+  .stat-val { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--ink); line-height: 1; }
+  .stat-lbl { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); margin-top: 4px; }
+  .stat-sub { font-size: 0.72rem; color: var(--ink3); margin-top: 2px; }
+
+  .corr-section h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 0.85rem; }
+  .corr-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .corr-lbl { font-size: 0.72rem; color: var(--ink2); width: 130px; flex-shrink: 0; }
+  .corr-bar-wrap { flex: 1; height: 6px; background: var(--paper3); border-radius: 3px; overflow: hidden; }
+  .corr-bar { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .corr-val { font-size: 0.7rem; color: var(--ink3); width: 36px; text-align: right; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-title">Sleep Log</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('log')">Log</button>
+    <button class="nav-tab" onclick="showView('history')">History</button>
+    <button class="nav-tab" onclick="showView('stats')">Stats</button>
+  </div>
+</nav>
+
+<!-- LOG VIEW -->
+<div class="view active" id="view-log">
+  <div class="day-label" id="todayLabel"></div>
+  <div class="day-title" id="dayTitle"></div>
+
+  <div class="section-head">How do you feel today?</div>
+
+  <div class="field"><span class="field-lbl">Mood</span><div class="stars" data-f="mood"></div></div>
+  <div class="field"><span class="field-lbl">Morning energy</span><div class="stars" data-f="morningEnergy"></div></div>
+  <div class="field"><span class="field-lbl">Afternoon energy</span><div class="stars" data-f="afternoonEnergy"></div></div>
+  <div class="field"><span class="field-lbl">Cognitive sharpness</span><div class="stars" data-f="cogSharpness"></div></div>
+  <div class="field"><span class="field-lbl">Physical readiness</span><div class="stars" data-f="physReady"></div></div>
+
+  <div class="section-head">Last night's sleep</div>
+
+  <div class="field"><span class="field-lbl">Bedtime</span><input type="time" id="sleepTime"></div>
+  <div class="field"><span class="field-lbl">Woke up</span><input type="time" id="wakeTime"></div>
+  <div class="field"><span class="field-lbl">Sleep onset (mins)</span><input type="number" id="onset" min="0" max="120" placeholder="15"></div>
+  <div class="field"><span class="field-lbl">Interruptions</span><input type="number" id="interruptions" min="0" max="20" placeholder="0"></div>
+  <div class="field"><span class="field-lbl">Stress before bed</span><div class="stars" data-f="stressBed"></div></div>
+
+  <div class="section-head">Evening factors</div>
+
+  <div class="field"><span class="field-lbl">Last food</span><input type="time" id="lastFood"></div>
+  <div class="field">
+    <span class="field-lbl">Activity before bed</span>
+    <div id="activity" class="activity-options">
+      <label><input type="checkbox" value="Reading"> Reading</label><br>
+      <label><input type="checkbox" value="Light stretching"> Light stretching</label><br>
+      <label><input type="checkbox" value="Meditation"> Meditation</label><br>
+      <label><input type="checkbox" value="Walking"> Walking</label><br>
+      <label><input type="checkbox" value="Nothing / passive rest"> Nothing / passive rest</label><br>
+      <input type="text" id="otherActivity" placeholder="Other activity" style="margin-top: 8px; width: 100%; font-family: 'DM Mono', monospace; font-size: 0.82rem; background: var(--paper2); border: 1px solid var(--paper3); border-radius: var(--r); padding: 7px 10px; color: var(--ink);">
+    </div>
+  </div>
+  <div class="field">
+    <span class="field-lbl">Exercise</span>
+    <div class="time-wrap">
+      <input type="time" id="exerciseTime">
+      <button class="na-btn" id="exNaBtn" onclick="toggleNA()">N/A</button>
+    </div>
+  </div>
+  <div class="field">
+    <span class="field-lbl">Caffeine?</span>
+    <div class="yn-row">
+      <button class="yn-btn" data-g="caffeine" data-v="yes">Yes</button>
+      <button class="yn-btn" data-g="caffeine" data-v="no">No</button>
+    </div>
+  </div>
+  <div class="field">
+    <span class="field-lbl">Alcohol?</span>
+    <div class="yn-row">
+      <button class="yn-btn" data-g="alcohol" data-v="yes">Yes</button>
+      <button class="yn-btn" data-g="alcohol" data-v="no">No</button>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveEntry()">Save entry</button>
+</div>
+
+<!-- HISTORY VIEW -->
+<div class="view" id="view-history">
+  <div class="history-bar">
+    <h2>All entries</h2>
+    <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div id="historyList"></div>
+</div>
+
+<!-- STATS VIEW -->
+<div class="view" id="view-stats">
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="corr-section">
+    <h3>Sleep duration vs. wellbeing</h3>
+    <div id="corrCharts"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DB_KEY = 'sleep_log_v1';
+
+// ── Date helpers ──────────────────────────────────────────────
+const today = new Date();
+const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+const fmt = d => d.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long' });
+const fmtShort = d => d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+const isoDate = d => d.toISOString().slice(0,10);
+
+document.getElementById('todayLabel').textContent =
+  today.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+document.getElementById('dayTitle').innerHTML =
+  `How was <em>${fmt(yesterday)}</em>'s sleep?`;
+
+// ── Ratings state ─────────────────────────────────────────────
+const ratings = {};
+let exNA = false;
+
+document.querySelectorAll('.stars[data-f]').forEach(el => {
+  const f = el.dataset.f; ratings[f] = 0;
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement('div');
+    s.className = 'star'; s.textContent = i; s.dataset.v = i;
+    s.onclick = () => {
+      ratings[f] = i;
+      el.querySelectorAll('.star').forEach(x => x.classList.toggle('lit', +x.dataset.v <= i));
+    };
+    el.appendChild(s);
+  }
+});
+
+document.querySelectorAll('.yn-btn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll(`.yn-btn[data-g="${b.dataset.g}"]`).forEach(x => x.className = 'yn-btn');
+    b.classList.add(b.dataset.v);
+  };
+});
+
+function toggleNA() {
+  exNA = !exNA;
+  const inp = document.getElementById('exerciseTime');
+  const btn = document.getElementById('exNaBtn');
+  inp.disabled = exNA; inp.style.opacity = exNA ? '0.3' : '1';
+  if (exNA) inp.value = '';
+  btn.classList.toggle('on', exNA);
+}
+
+function getYN(g) {
+  const a = document.querySelector(`.yn-btn[data-g="${g}"].yes, .yn-btn[data-g="${g}"].no`);
+  return a ? a.dataset.v : '';
+}
+
+function calcSleep(bed, wake, onset) {
+  if (!bed || !wake) return '';
+  const [bh,bm] = bed.split(':').map(Number);
+  const [wh,wm] = wake.split(':').map(Number);
+  let mins = (wh*60+wm) - (bh*60+bm);
+  if (mins < 0) mins += 1440;
+  mins -= (parseInt(onset) || 0);
+  return +(mins/60).toFixed(2);
+}
+
+// ── Storage ───────────────────────────────────────────────────
+function load() { try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; } catch { return []; } }
+function save(d) { localStorage.setItem(DB_KEY, JSON.stringify(d)); }
+
+// ── Save entry ────────────────────────────────────────────────
+function saveEntry() {
+  const bed = document.getElementById('sleepTime').value;
+  const wake = document.getElementById('wakeTime').value;
+  const onset = document.getElementById('onset').value;
+  const entry = {
+    id: Date.now(),
+    date: isoDate(yesterday),
+    dateLabel: fmtShort(yesterday),
+    mood: ratings.mood || '',
+    morningEnergy: ratings.morningEnergy || '',
+    afternoonEnergy: ratings.afternoonEnergy || '',
+    cogSharpness: ratings.cogSharpness || '',
+    physReady: ratings.physReady || '',
+    sleepTime: bed,
+    wakeTime: wake,
+    onset: onset,
+    interruptions: document.getElementById('interruptions').value,
+    stressBed: ratings.stressBed || '',
+    lastFood: document.getElementById('lastFood').value,
+    activity: (() => {
+
+      const checked = Array.from(document.querySelectorAll('#activity input:checked')).map(cb => cb.value).join(', ');
+
+      const other = document.getElementById('otherActivity').value.trim();
+
+      return [checked, other].filter(Boolean).join(', ');
+
+    })(),
+    exercise: exNA ? 'N/A' : document.getElementById('exerciseTime').value,
+    caffeine: getYN('caffeine'),
+    alcohol: getYN('alcohol'),
+    totalSleep: calcSleep(bed, wake, onset)
+  };
+  const data = load();
+  data.unshift(entry);
+  save(data);
+  toast('Entry saved');
+  resetForm();
+}
+
+function resetForm() {
+  Object.keys(ratings).forEach(k => ratings[k] = 0);
+  document.querySelectorAll('.star').forEach(s => s.classList.remove('lit'));
+  document.querySelectorAll('.yn-btn').forEach(b => b.className = 'yn-btn');
+  ['sleepTime','wakeTime','onset','interruptions','lastFood','exerciseTime'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.querySelectorAll('#activity input').forEach(cb => cb.checked = false);
+
+  document.getElementById('otherActivity').value = '';
+  if (exNA) toggleNA();
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.querySelectorAll('.nav-tab')[['log','history','stats'].indexOf(v)].classList.add('active');
+  if (v === 'history') renderHistory();
+  if (v === 'stats') renderStats();
+}
+
+// ── History ───────────────────────────────────────────────────
+function scoreColor(v) {
+  if (!v) return '';
+  if (v >= 4) return 'hi';
+  if (v >= 3) return 'mid';
+  return 'lo';
+}
+
+function renderHistory() {
+  const data = load();
+  const el = document.getElementById('historyList');
+  if (!data.length) {
+    el.innerHTML = '<div class="empty-state">No entries yet.<br>Log your first night\'s sleep to get started.</div>';
+    return;
+  }
+  el.innerHTML = data.map(e => `
+    <div class="entry-card">
+      <div style="flex:1;min-width:0">
+        <div class="entry-date">${e.dateLabel}</div>
+        <div class="entry-scores">
+          ${e.mood ? `<span class="pill ${scoreColor(e.mood)}">mood ${e.mood}</span>` : ''}
+          ${e.morningEnergy ? `<span class="pill ${scoreColor(e.morningEnergy)}">AM ${e.morningEnergy}</span>` : ''}
+          ${e.cogSharpness ? `<span class="pill ${scoreColor(e.cogSharpness)}">cog ${e.cogSharpness}</span>` : ''}
+          ${e.stressBed ? `<span class="pill ${scoreColor(6-e.stressBed)}">stress ${e.stressBed}</span>` : ''}
+          ${e.caffeine ? `<span class="pill">☕ ${e.caffeine}</span>` : ''}
+          ${e.alcohol ? `<span class="pill">🍷 ${e.alcohol}</span>` : ''}
+        </div>
+      </div>
+      <div class="entry-sleep">
+        <strong>${e.totalSleep ? e.totalSleep + 'h' : '—'}</strong>
+        sleep
+      </div>
+      <button class="del-btn" onclick="deleteEntry(${e.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function deleteEntry(id) {
+  const data = load().filter(e => e.id !== id);
+  save(data);
+  renderHistory();
+  toast('Entry deleted');
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function avg(arr) {
+  const v = arr.filter(x => x !== '' && x !== null && x !== undefined && !isNaN(x)).map(Number);
+  return v.length ? +(v.reduce((a,b) => a+b,0)/v.length).toFixed(1) : null;
+}
+
+function renderStats() {
+  const data = load();
+  const grid = document.getElementById('statsGrid');
+  const corr = document.getElementById('corrCharts');
+
+  if (!data.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No data yet.</div>';
+    corr.innerHTML = '';
+    return;
+  }
+
+  const sleepVals = data.map(e => e.totalSleep).filter(v => v !== '' && v > 0);
+  const moodVals = data.map(e => e.mood).filter(v => v);
+
+  const stats = [
+    { val: data.length, lbl: 'Entries', sub: 'total logged' },
+    { val: avg(sleepVals) ? avg(sleepVals) + 'h' : '—', lbl: 'Avg sleep', sub: 'per night' },
+    { val: avg(moodVals) ? avg(moodVals) + '/5' : '—', lbl: 'Avg mood', sub: '' },
+    { val: avg(data.map(e=>e.cogSharpness)) ? avg(data.map(e=>e.cogSharpness)) + '/5' : '—', lbl: 'Avg cog. sharpness', sub: '' },
+    { val: avg(data.map(e=>e.stressBed)) ? avg(data.map(e=>e.stressBed)) + '/5' : '—', lbl: 'Avg pre-bed stress', sub: '' },
+    { val: avg(data.map(e=>e.onset)) ? avg(data.map(e=>e.onset)) + 'min' : '—', lbl: 'Avg sleep onset', sub: '' },
+  ];
+
+  grid.innerHTML = stats.map(s => `
+    <div class="stat-card">
+      <div class="stat-val">${s.val}</div>
+      <div class="stat-lbl">${s.lbl}</div>
+      ${s.sub ? `<div class="stat-sub">${s.sub}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Simple correlation: avg outcome per sleep bucket
+  const paired = data.filter(e => e.totalSleep && e.mood).map(e => ({ sleep: +e.totalSleep, mood: +e.mood, energy: +e.morningEnergy || 0, cog: +e.cogSharpness || 0 }));
+
+  const metrics = [
+    { key: 'mood', lbl: 'Mood' },
+    { key: 'energy', lbl: 'Morning energy' },
+    { key: 'cog', lbl: 'Cognitive sharpness' },
+  ];
+
+  if (paired.length < 3) {
+    corr.innerHTML = '<div style="font-size:0.78rem;color:var(--ink3)">Log at least 3 entries to see correlations.</div>';
+    return;
+  }
+
+  const maxSleep = Math.max(...paired.map(p => p.sleep));
+
+  corr.innerHTML = metrics.map(m => {
+    const buckets = {};
+    paired.forEach(p => {
+      const b = Math.floor(p.sleep);
+      if (!buckets[b]) buckets[b] = [];
+      buckets[b].push(p[m.key]);
+    });
+    const rows = Object.entries(buckets).sort((a,b) => +a[0]-+b[0]).map(([hrs, vals]) => {
+      const a = avg(vals);
+      const width = (a/5*100).toFixed(0);
+      const color = a >= 4 ? '#3a6b4a' : a >= 3 ? '#b8860b' : '#b03030';
+      return `<div class="corr-row">
+        <div class="corr-lbl">${hrs}h sleep (n=${vals.length})</div>
+        <div class="corr-bar-wrap"><div class="corr-bar" style="width:${width}%;background:${color}"></div></div>
+        <div class="corr-val">${a}/5</div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:1.25rem"><div style="font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">${m.lbl}</div>${rows}</div>`;
+  }).join('');
+}
+
+// ── CSV Export ────────────────────────────────────────────────
+function exportCSV() {
+  const data = load();
+  if (!data.length) { toast('Nothing to export'); return; }
+  const cols = ['date','mood','morningEnergy','afternoonEnergy','cogSharpness','physReady',
+    'sleepTime','wakeTime','onset','interruptions','stressBed','lastFood',
+    'activity','exercise','caffeine','alcohol','totalSleep'];
+  const header = ['Date','Mood','Morning Energy','Afternoon Energy','Cog Sharpness','Phys Readiness',
+    'Bedtime','Wake Time','Sleep Onset (min)','Interruptions','Pre-bed Stress','Last Food',
+    'Activity','Exercise','Caffeine','Alcohol','Total Sleep (hrs)'];
+  const rows = [header, ...data.map(e => cols.map(c => `"${String(e[c]||'').replace(/"/g,'""')}"`))];
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `sleep_log_${isoDate(today)}.csv`;
+  a.click();
+  toast('CSV exported');
+}
+</script>
+</body>
+</html>
